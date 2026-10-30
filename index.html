@@ -40,11 +40,11 @@ const key='easyplusClassicAlert_v1', videoKey='easyplusClassicVideo_v1';
 const fields=['origin','event','location','duration','message','station','attention'];
 const getData=()=>Object.fromEntries(fields.map(id=>[id,$(id).value]));
 const isOverlay=new URLSearchParams(window.location.search).get('overlay')==='1';
-let timer=null,audioCtx=null;
+let timer=null,audioCtx=null,channel=null;
 function log(msg){const li=document.createElement('li'),t=document.createElement('time');t.textContent=new Date().toLocaleTimeString();li.append(t,document.createTextNode(msg));$('log').prepend(li)}
 function renderPreview(){const d=getData();$('previewCode').textContent=d.origin+' / '+d.event;$('previewMsg').textContent=d.message}
 fields.forEach(id=>$(id).addEventListener('input',renderPreview));
-function sendChannel(data){try{const ch=new BroadcastChannel('easyplusClassicChannel');ch.postMessage(data);ch.close()}catch{}}
+function sendChannel(data){try{if(!channel)channel=new BroadcastChannel('easyplusClassicChannel');channel.postMessage(data)}catch(e){console.warn('BroadcastChannel unavailable; using localStorage polling.',e)}}
 function publish(alert){localStorage.setItem(key,JSON.stringify(alert));sendChannel(alert)}
 function videoIdFromUrl(raw){try{const u=new URL(raw);let id='';if(u.hostname==='youtu.be'||u.hostname.endsWith('.youtu.be'))id=u.pathname.split('/').filter(Boolean)[0]||'';else if(u.hostname.includes('youtube.com')){id=u.searchParams.get('v')||'';if(!id){const p=u.pathname.split('/').filter(Boolean);if(['shorts','embed','live','v'].includes(p[0]))id=p[1]||''}}return /^[A-Za-z0-9_-]{11}$/.test(id)?id:''}catch{return ''}}
 function publishVideo(v){localStorage.setItem(videoKey,JSON.stringify(v));sendChannel({type:'video',...v})}
